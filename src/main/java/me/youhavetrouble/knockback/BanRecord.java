@@ -1,8 +1,9 @@
 package me.youhavetrouble.knockback;
 
+import java.sql.Timestamp;
 import java.util.UUID;
 
-public record BanRecord(UUID uuid, Long endsAt, String reason) {
+public record BanRecord(UUID uuid, Timestamp endsAt, String reason) {
 
     /**
      * @return True if ban is permanent
