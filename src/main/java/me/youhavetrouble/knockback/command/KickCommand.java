@@ -1,4 +1,4 @@
-package me.youhavetrouble.knockback.commands;
+package me.youhavetrouble.knockback.command;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
@@ -15,9 +15,12 @@ public class KickCommand implements SimpleCommand {
     private final Knockback plugin;
     private final ProxyServer server;
 
+    private final String kickFormat;
+
     public KickCommand(Knockback plugin) {
         this.plugin = plugin;
         this.server = plugin.getServer();
+        this.kickFormat = plugin.getConfig().getTable("Messages").getString("kick-format");
     }
 
     @Override
@@ -56,11 +59,7 @@ public class KickCommand implements SimpleCommand {
     public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
         if (!hasPermission(invocation)) return CompletableFuture.completedFuture(new ArrayList<>());
         if (invocation.arguments().length == 1) {
-            CompletableFuture.supplyAsync(() -> {
-                List<String> suggestions = new ArrayList<>();
-                server.getAllPlayers().forEach(player -> suggestions.add(player.getUsername()));
-                return suggestions;
-            });
+            return plugin.getOnlinePlayerNames();
         }
         return SimpleCommand.super.suggestAsync(invocation);
     }

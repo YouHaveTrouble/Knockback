@@ -4,3 +4,9 @@ port=3306
 database="minecraft"
 username="minecraft"
 password="minecraft"
+
+[Messages]
+kick-format="You were kicked.<newline>Reason: %s"
+ban-format="You were permanently banned.<newline>Reason: %s"
+tempban-format="You were banned until %s.<newline>Reason: %s"
+no-reason="No reason provided."

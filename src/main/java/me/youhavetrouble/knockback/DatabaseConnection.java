@@ -28,11 +28,11 @@ public class DatabaseConnection {
     protected void insertBan(BanRecord banRecord) {
         String sql = "INSERT INTO `bans` (uuid, expires, reason) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE expires = ?, reason = ?;";
         try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, banRecord.uuid().toString());
-            statement.setTimestamp(2, banRecord.endsAt());
-            statement.setString(3, banRecord.reason());
-            statement.setTimestamp(4, banRecord.endsAt());
-            statement.setString(5, banRecord.reason());
+            statement.setString(1, banRecord.getUuid().toString());
+            statement.setTimestamp(2, banRecord.getTimestamp());
+            statement.setString(3, banRecord.getReason());
+            statement.setTimestamp(4, banRecord.getTimestamp());
+            statement.setString(5, banRecord.getReason());
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -62,6 +62,5 @@ public class DatabaseConnection {
             e.printStackTrace();
         }
     }
-
 
 }

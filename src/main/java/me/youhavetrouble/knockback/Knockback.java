@@ -1,5 +1,8 @@
 package me.youhavetrouble.knockback;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.moandjiezana.toml.Toml;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -8,19 +11,21 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import me.youhavetrouble.knockback.commands.BanCommand;
-import me.youhavetrouble.knockback.commands.KickCommand;
+import me.youhavetrouble.knockback.command.BanCommand;
+import me.youhavetrouble.knockback.command.KickCommand;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Plugin(
         id = "knockback",
@@ -81,14 +86,6 @@ public class Knockback {
         return new Toml().read(file);
     }
 
-    public UUID getUUID(String playerName) {
-        Optional<Player> optionalPlayer = server.getPlayer(playerName);
-        if (optionalPlayer.isEmpty()) {
-            return null;
-        }
-        return optionalPlayer.get().getUniqueId();
-    }
-
     public ProxyServer getServer() {
         return server;
     }
@@ -117,6 +114,45 @@ public class Knockback {
     public static BanRecord getPlayerBan(UUID uuid) throws BanException {
         if (databaseConnection == null) throw new BanException("Database connection not initialized");
         return databaseConnection.getBan(uuid);
+    }
+
+    /**
+     * Asks mojang API for player's UUID
+     * @return Player's UUID. Null if player not found or on error
+     */
+    private UUID askMojangForUuid(String playerName) {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(new URL("https://api.mojang.com/users/profiles/minecraft/" + playerName).openStream()));
+            String stringUuid = (((JsonObject)JsonParser.parseReader(in)).get("id")).toString().replaceAll("\"", "");
+            stringUuid = stringUuid.replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+            in.close();
+            return UUID.fromString(stringUuid);
+        } catch (IOException | IllegalArgumentException | JsonParseException | NullPointerException e) {
+            return null;
+        }
+    }
+
+    public CompletableFuture<List<String>> getOnlinePlayerNames() {
+        return CompletableFuture.supplyAsync(() -> {
+            List<String> suggestions = new ArrayList<>();
+            server.getAllPlayers().forEach(player -> suggestions.add(player.getUsername()));
+            return suggestions;
+        });
+    }
+
+    public Toml getConfig() {
+        return config;
+    }
+
+    /**
+     * Supplies player's UUID. Returns null if player is not on the server and wasn't found in mojang services.
+     * @return Player's UUID or null if not found.
+     */
+    public CompletableFuture<UUID> getUuidFromName(String playerName) {
+        Optional<Player> optionalPlayer = server.getPlayer(playerName);
+        return optionalPlayer
+                .map(player -> CompletableFuture.completedFuture(player.getUniqueId()))
+                .orElseGet(() -> CompletableFuture.supplyAsync(() -> askMojangForUuid(playerName)));
     }
 }
 
