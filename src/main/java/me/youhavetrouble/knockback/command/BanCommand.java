@@ -3,11 +3,9 @@ package me.youhavetrouble.knockback.command;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
-import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.BanException;
 import me.youhavetrouble.knockback.Knockback;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -13,6 +13,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.command.BanCommand;
 import me.youhavetrouble.knockback.command.KickCommand;
+import me.youhavetrouble.knockback.command.UnbanCommand;
 import me.youhavetrouble.knockback.listener.JoinListener;
 import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
@@ -75,6 +76,8 @@ public class Knockback {
 
         server.getCommandManager().register("ban", new BanCommand(this));
         server.getCommandManager().register("kick", new KickCommand(this));
+
+        server.getCommandManager().register("unban", new UnbanCommand(this));
     }
 
     public static Knockback getPlugin() {
