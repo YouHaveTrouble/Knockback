@@ -22,11 +22,36 @@ public class DatabaseConnection {
         config.setMaximumPoolSize(10);
         dataSource = new HikariDataSource(config);
         createBansTable();
+        createArchivedBansTable();
     }
 
     private void createBansTable() {
         String sql = "CREATE TABLE IF NOT EXISTS `bans` (uuid varchar(36) NOT NULL PRIMARY KEY, expires timestamp NULL, reason varchar(512));";
         try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createArchivedBansTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS `ban_log` (id int NOT NULL AUTO_INCREMENT PRIMARY KEY, ban_action varchar(32) NOT NULL, ban_time timestamp, target_uuid varchar(36) NOT NULL, source_uuid varchar(36), expires timestamp NULL, reason varchar(512));";
+        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void insertBanLog(ArchievedBanEntry archievedBanEntry) {
+        String sql = "INSERT INTO `ban_log` (ban_action, ban_time, target_uuid, source_uuid, expires, reason) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, archievedBanEntry.getAction().toString());
+            statement.setTimestamp(2, archievedBanEntry.getTimestamp());
+            statement.setString(3, archievedBanEntry.getTargetId().toString());
+            statement.setString(4, archievedBanEntry.getSourceId() != null ? archievedBanEntry.getSourceId().toString() : null);
+            statement.setTimestamp(5, archievedBanEntry.getTimestamp());
+            statement.setString(6, archievedBanEntry.getExtraData());
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

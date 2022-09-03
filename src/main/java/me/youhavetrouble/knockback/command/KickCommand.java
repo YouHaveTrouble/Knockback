@@ -4,10 +4,9 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import me.youhavetrouble.knockback.BanException;
 import me.youhavetrouble.knockback.Knockback;
-import me.youhavetrouble.knockback.PluginMessage;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextReplacementConfig;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -34,10 +33,11 @@ public class KickCommand implements SimpleCommand {
                     return;
                 }
                 UUID sourceId = source instanceof Player sourcePlayer ? sourcePlayer.getUniqueId() : null;
-                player.get().disconnect(PluginMessage.KICK_FORMAT.getMessage().replaceText(TextReplacementConfig.builder()
-                        .match("%reason%")
-                        .replacement(PluginMessage.NO_REASON.getMessage()).build())
-                );
+                try {
+                    Knockback.kickPlayer(player.get(), sourceId, null);
+                } catch (BanException e) {
+                    source.sendMessage(Component.text("Encountered an error during kick process"));
+                }
             }
             default -> {
                 Optional<Player> player = server.getPlayer(invocation.arguments()[0]);
@@ -52,11 +52,11 @@ public class KickCommand implements SimpleCommand {
                 String reasonMessage = String.join(" ", rawMsg);
 
                 UUID sourceId = source instanceof Player sourcePlayer ? sourcePlayer.getUniqueId() : null;
-                player.get().disconnect(PluginMessage.KICK_FORMAT.getMessage().replaceText(TextReplacementConfig.builder()
-                        .match("%reason%")
-                        .replacement(Component.text(reasonMessage))
-                        .build())
-                );
+                try {
+                    Knockback.kickPlayer(player.get(), sourceId, reasonMessage);
+                } catch (BanException e) {
+                    source.sendMessage(Component.text("Encountered an error during kick process"));
+                }
             }
         }
     }

@@ -16,8 +16,10 @@ import me.youhavetrouble.knockback.command.KickCommand;
 import me.youhavetrouble.knockback.command.UnbanCommand;
 import me.youhavetrouble.knockback.listener.JoinListener;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
@@ -117,21 +119,64 @@ public class Knockback {
         if (databaseConnection == null) throw new BanException("Database connection not initialized");
         Timestamp timestamp = length == null ? null : new Timestamp(Instant.now().getEpochSecond()+length);
         BanRecord banRecord = new BanRecord(bannedId, timestamp, reason);
-        System.out.println(banRecord.getTimestamp());
         databaseConnection.insertBan(banRecord);
         Optional<Player> optionalPlayer = Knockback.plugin.server.getPlayer(bannedId);
         if (optionalPlayer.isPresent()) {
             Player player = optionalPlayer.get();
             player.disconnect(PluginMessage.getBannedMessage(banRecord));
         }
+        databaseConnection.insertBanLog(
+                new ArchievedBanEntry(
+                        ArchievedBanEntry.Action.BAN,
+                        banRecord.getUuid(),
+                        source,
+                        banRecord.getReason(),
+                        banRecord.getTimestamp()
+                )
+        );
     }
 
     /**
      * Unbans the player
      */
-    public static void unbanPlayer(UUID bannedId, UUID source) throws BanException {
+    protected static void unbanPlayer(UUID bannedId, UUID source, boolean shouldLog) throws BanException {
         if (databaseConnection == null) throw new BanException("Database connection not initialized");
         databaseConnection.removeBan(bannedId);
+        if (!shouldLog) return;
+        databaseConnection.insertBanLog(
+                new ArchievedBanEntry(
+                        ArchievedBanEntry.Action.UNBAN,
+                        bannedId,
+                        source,
+                        null,
+                        null
+                )
+        );
+    }
+
+    public static void unbanPlayer(UUID bannedId, UUID source) throws BanException {
+        unbanPlayer(bannedId, source, true);
+    }
+
+    public static void kickPlayer(Player player, UUID source, String reason) throws BanException {
+        if (databaseConnection == null) throw new BanException("Database connection not initialized");
+        if (!player.isActive()) return;
+
+        Component reasonComponent = reason != null ? Component.text(reason) : PluginMessage.NO_REASON.getMessage();
+
+        player.disconnect(PluginMessage.KICK_FORMAT.getMessage().replaceText(TextReplacementConfig.builder()
+                .match("%reason%")
+                .replacement(reasonComponent).build())
+        );
+        databaseConnection.insertBanLog(
+                new ArchievedBanEntry(
+                        ArchievedBanEntry.Action.KICK,
+                        player.getUniqueId(),
+                        source,
+                        reason,
+                        null
+                )
+        );
     }
 
     /**
