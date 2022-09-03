@@ -13,13 +13,13 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.command.BanCommand;
 import me.youhavetrouble.knockback.command.KickCommand;
+import me.youhavetrouble.knockback.command.TembanCommand;
 import me.youhavetrouble.knockback.command.UnbanCommand;
 import me.youhavetrouble.knockback.listener.JoinListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
@@ -77,6 +77,7 @@ public class Knockback {
         server.getEventManager().register(this, new JoinListener());
 
         server.getCommandManager().register("ban", new BanCommand(this));
+        server.getCommandManager().register("tempban", new TembanCommand(this));
         server.getCommandManager().register("kick", new KickCommand(this));
 
         server.getCommandManager().register("unban", new UnbanCommand(this));
@@ -117,7 +118,7 @@ public class Knockback {
      */
     public static void banPlayer(UUID bannedId, Long length, String reason, UUID source) throws BanException {
         if (databaseConnection == null) throw new BanException("Database connection not initialized");
-        Timestamp timestamp = length == null ? null : new Timestamp(Instant.now().getEpochSecond()+length);
+        Timestamp timestamp = length == null ? null : new Timestamp((Instant.now().getEpochSecond()+length)*1000);
         BanRecord banRecord = new BanRecord(bannedId, timestamp, reason);
         databaseConnection.insertBan(banRecord);
         Optional<Player> optionalPlayer = Knockback.plugin.server.getPlayer(bannedId);
@@ -203,12 +204,10 @@ public class Knockback {
         }
     }
 
-    public CompletableFuture<List<String>> getOnlinePlayerNames() {
-        return CompletableFuture.supplyAsync(() -> {
-            List<String> suggestions = new ArrayList<>();
-            server.getAllPlayers().forEach(player -> suggestions.add(player.getUsername()));
-            return suggestions;
-        });
+    public ArrayList<String> getOnlinePlayerNames() {
+        ArrayList<String> suggestions = new ArrayList<>();
+        server.getAllPlayers().forEach(player -> suggestions.add(player.getUsername()));
+        return suggestions;
     }
 
     public Toml getConfig() {

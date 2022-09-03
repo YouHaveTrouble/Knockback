@@ -6,6 +6,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.BanException;
 import me.youhavetrouble.knockback.Knockback;
+import me.youhavetrouble.knockback.util.StringUtil;
 import net.kyori.adventure.text.Component;
 
 import java.util.*;
@@ -64,8 +65,13 @@ public class KickCommand implements SimpleCommand {
     @Override
     public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
         if (!hasPermission(invocation)) return CompletableFuture.completedFuture(new ArrayList<>());
-        if (invocation.arguments().length <= 1) {
-            return plugin.getOnlinePlayerNames();
+        if (invocation.arguments().length < 1) {
+            return CompletableFuture.completedFuture(plugin.getOnlinePlayerNames());
+        }
+        if (invocation.arguments().length == 1) {
+            return CompletableFuture.completedFuture(StringUtil.getCompletions(
+                    plugin.getOnlinePlayerNames(), invocation.arguments()[0])
+            );
         }
         return SimpleCommand.super.suggestAsync(invocation);
     }

@@ -38,16 +38,17 @@ public enum PluginMessage {
 
     public static Component getBannedMessage(BanRecord banRecord) {
         Component bannedMessage;
+        Component reason = banRecord.getReason() != null ? Component.text(banRecord.getReason()) : PluginMessage.NO_REASON.getMessage();
         if (banRecord.getTimestamp() == null) {
             bannedMessage = PluginMessage.BAN_FORMAT.getMessage().replaceText(builder -> {
                 builder.match("%reason%");
-                builder.replacement(banRecord.getReason());
+                builder.replacement(reason);
             });
         } else {
             bannedMessage = PluginMessage.TEMPBAN_FORMAT.getMessage();
             bannedMessage = bannedMessage.replaceText(builder -> {
                 builder.match("%reason%");
-                builder.replacement(banRecord.getReason());
+                builder.replacement(reason);
             });
             bannedMessage = bannedMessage.replaceText(builder -> {
                 builder.match("%time%");
