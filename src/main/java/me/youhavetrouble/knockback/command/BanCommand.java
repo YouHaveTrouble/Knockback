@@ -7,6 +7,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.BanException;
 import me.youhavetrouble.knockback.Knockback;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,11 +18,9 @@ import java.util.concurrent.CompletableFuture;
 public class BanCommand implements SimpleCommand {
 
     private final Knockback plugin;
-    private final ProxyServer server;
 
     public BanCommand(Knockback plugin) {
         this.plugin = plugin;
-        this.server = plugin.getServer();
     }
 
     @Override
@@ -67,7 +66,7 @@ public class BanCommand implements SimpleCommand {
     @Override
     public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
         if (!hasPermission(invocation)) return CompletableFuture.completedFuture(new ArrayList<>());
-        if (invocation.arguments().length == 1) {
+        if (invocation.arguments().length <= 1) {
             return plugin.getOnlinePlayerNames();
         }
         return SimpleCommand.super.suggestAsync(invocation);

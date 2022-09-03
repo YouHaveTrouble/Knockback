@@ -6,7 +6,7 @@ username="minecraft"
 password="minecraft"
 
 [Messages]
-kick-format="You were kicked.<newline>Reason: %s"
-ban-format="You were permanently banned.<newline>Reason: %s"
-tempban-format="You were banned until %s.<newline>Reason: %s"
+kick-format="You were kicked.<newline>Reason: %reason%"
+ban-format="You were permanently banned.<newline>Reason: %reason%"
+tempban-format="You were banned until %time%.<newline>Reason: %reason%"
 no-reason="No reason provided."

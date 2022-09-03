@@ -13,6 +13,8 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.command.BanCommand;
 import me.youhavetrouble.knockback.command.KickCommand;
+import me.youhavetrouble.knockback.listener.JoinListener;
+import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -37,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 )
 public class Knockback {
 
+    private static Knockback plugin;
     private final Toml config;
     private static DatabaseConnection databaseConnection;
     private final ProxyServer server;
@@ -44,15 +47,22 @@ public class Knockback {
     @Inject
     private Logger logger;
 
+    private final Path configFolder;
+
     @Inject
     public Knockback(ProxyServer server, @DataDirectory final Path folder) {
-        this.config = loadConfig(folder);
+        this.configFolder = folder;
+        this.config = loadConfig();
         this.server = server;
+        plugin = this;
+        PluginMessage.reloadFromConfig();
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) throws ClassNotFoundException {
+
         Toml database = config.getTable("Database");
+
         databaseConnection = new DatabaseConnection(
                 database.getString("host"),
                 Integer.parseInt(database.getLong("port").toString()),
@@ -61,12 +71,18 @@ public class Knockback {
                 database.getString("database")
         );
 
+        server.getEventManager().register(this, new JoinListener());
+
         server.getCommandManager().register("ban", new BanCommand(this));
         server.getCommandManager().register("kick", new KickCommand(this));
     }
 
-    private Toml loadConfig(Path path) {
-        File folder = path.toFile();
+    public static Knockback getPlugin() {
+        return plugin;
+    }
+
+    protected Toml loadConfig() {
+        File folder = configFolder.toFile();
         File file = new File(folder, "config.toml");
         if (!file.getParentFile().exists()) {
             file.getParentFile().mkdirs();
@@ -97,7 +113,14 @@ public class Knockback {
     public static void banPlayer(UUID bannedId, Long length, String reason, UUID source) throws BanException {
         if (databaseConnection == null) throw new BanException("Database connection not initialized");
         Timestamp timestamp = length == null ? null : new Timestamp(Instant.now().getEpochSecond()+length);
-        databaseConnection.insertBan(new BanRecord(bannedId, timestamp, reason));
+        BanRecord banRecord = new BanRecord(bannedId, timestamp, reason);
+        System.out.println(banRecord.getTimestamp());
+        databaseConnection.insertBan(banRecord);
+        Optional<Player> optionalPlayer = Knockback.plugin.server.getPlayer(bannedId);
+        if (optionalPlayer.isPresent()) {
+            Player player = optionalPlayer.get();
+            player.disconnect(PluginMessage.getBannedMessage(banRecord));
+        }
     }
 
     /**

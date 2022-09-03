@@ -14,18 +14,27 @@ public class DatabaseConnection {
     private final HikariDataSource dataSource;
 
     protected DatabaseConnection(String server, int port, String username, String password, String database) throws ClassNotFoundException {
-        synchronized (this) {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            HikariConfig config = new HikariConfig();
-            String url = String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s", server, port, database, username, password);
-            config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            config.setJdbcUrl(url);
-            config.setMaximumPoolSize(10);
-            dataSource = new HikariDataSource(config);
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        HikariConfig config = new HikariConfig();
+        String url = String.format("jdbc:mysql://%s:%s/%s?user=%s&password=%s", server, port, database, username, password);
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        config.setJdbcUrl(url);
+        config.setMaximumPoolSize(10);
+        dataSource = new HikariDataSource(config);
+        createBansTable();
+    }
+
+    private void createBansTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS `bans` (uuid varchar(36) NOT NULL PRIMARY KEY, expires timestamp NULL, reason varchar(512));";
+        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
     protected void insertBan(BanRecord banRecord) {
+        System.out.println(banRecord.getTimestamp());
         String sql = "INSERT INTO `bans` (uuid, expires, reason) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE expires = ?, reason = ?;";
         try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, banRecord.getUuid().toString());

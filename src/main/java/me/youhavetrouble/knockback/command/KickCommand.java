@@ -5,7 +5,9 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import me.youhavetrouble.knockback.Knockback;
+import me.youhavetrouble.knockback.PluginMessage;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -15,12 +17,9 @@ public class KickCommand implements SimpleCommand {
     private final Knockback plugin;
     private final ProxyServer server;
 
-    private final String kickFormat;
-
     public KickCommand(Knockback plugin) {
         this.plugin = plugin;
         this.server = plugin.getServer();
-        this.kickFormat = plugin.getConfig().getTable("Messages").getString("kick-format");
     }
 
     @Override
@@ -35,7 +34,10 @@ public class KickCommand implements SimpleCommand {
                     return;
                 }
                 UUID sourceId = source instanceof Player sourcePlayer ? sourcePlayer.getUniqueId() : null;
-                player.get().disconnect(Component.text("You have been kicked"));
+                player.get().disconnect(PluginMessage.KICK_FORMAT.getMessage().replaceText(TextReplacementConfig.builder()
+                        .match("%reason%")
+                        .replacement(PluginMessage.NO_REASON.getMessage()).build())
+                );
             }
             default -> {
                 Optional<Player> player = server.getPlayer(invocation.arguments()[0]);
@@ -50,7 +52,11 @@ public class KickCommand implements SimpleCommand {
                 String reasonMessage = String.join(" ", rawMsg);
 
                 UUID sourceId = source instanceof Player sourcePlayer ? sourcePlayer.getUniqueId() : null;
-                player.get().disconnect(Component.text(reasonMessage));
+                player.get().disconnect(PluginMessage.KICK_FORMAT.getMessage().replaceText(TextReplacementConfig.builder()
+                        .match("%reason%")
+                        .replacement(Component.text(reasonMessage))
+                        .build())
+                );
             }
         }
     }
@@ -58,7 +64,7 @@ public class KickCommand implements SimpleCommand {
     @Override
     public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
         if (!hasPermission(invocation)) return CompletableFuture.completedFuture(new ArrayList<>());
-        if (invocation.arguments().length == 1) {
+        if (invocation.arguments().length <= 1) {
             return plugin.getOnlinePlayerNames();
         }
         return SimpleCommand.super.suggestAsync(invocation);
