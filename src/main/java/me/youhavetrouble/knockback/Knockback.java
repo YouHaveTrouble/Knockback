@@ -137,7 +137,7 @@ public class Knockback {
         );
     }
 
-    protected static void unbanPlayer(UUID bannedId, UUID source, boolean shouldLog) throws BanException {
+    public static void unbanPlayer(UUID bannedId, UUID source, boolean shouldLog) throws BanException {
         if (databaseConnection == null) throw new BanException("Database connection not initialized");
         databaseConnection.removeBan(bannedId);
         if (!shouldLog) return;

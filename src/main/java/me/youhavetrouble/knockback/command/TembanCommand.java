@@ -64,7 +64,7 @@ public class TembanCommand implements SimpleCommand {
 
                 List<String> rawMsg = new ArrayList<>(Arrays.stream(invocation.arguments().clone()).toList());
                 rawMsg.remove(0);
-                rawMsg.remove(1);
+                rawMsg.remove(0);
 
                 String reasonMessage = String.join(" ", rawMsg);
 
